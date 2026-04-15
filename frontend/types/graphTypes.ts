@@ -25,6 +25,21 @@ export interface AgentState {
 export interface RetrieveDocumentsNodeUpdates {
   retrieveDocuments: {
     documents: documentType;
+    retrievedChunkCount?: number;
+    hopCount?: number;
+  };
+}
+
+export interface ValidateEvidenceNodeUpdates {
+  validateEvidence: {
+    hasConflicts?: boolean;
+  };
+}
+
+export interface ClassifyNodeUpdates {
+  classifyAndRoute: {
+    queryComplexity?: 'simple' | 'medium' | 'complex';
+    route?: string;
   };
 }
 

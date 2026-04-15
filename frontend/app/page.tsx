@@ -16,6 +16,8 @@ import {
   documentType,
   PDFDocument,
   RetrieveDocumentsNodeUpdates,
+  ValidateEvidenceNodeUpdates,
+  ClassifyNodeUpdates,
 } from '@/types/graphTypes';
 import { Card, CardContent } from '@/components/ui/card';
 export default function Home() {
@@ -25,17 +27,26 @@ export default function Home() {
       role: 'user' | 'assistant';
       content: string;
       sources?: PDFDocument[];
+      chunkCount?: number;
+      queryComplexity?: 'simple' | 'medium' | 'complex';
+      hasConflicts?: boolean;
+      hopCount?: number;
     }>
   >([]);
   const [input, setInput] = useState('');
   const [files, setFiles] = useState<File[]>([]);
+  const [pdfUrls, setPdfUrls] = useState<Map<string, string>>(new Map());
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const abortControllerRef = useRef<AbortController | null>(null); // Track the AbortController
-  const messagesEndRef = useRef<HTMLDivElement>(null); // Add this ref
-  const lastRetrievedDocsRef = useRef<PDFDocument[]>([]); // useRef to store the last retrieved documents
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastRetrievedDocsRef = useRef<PDFDocument[]>([]);
+  const lastChunkCountRef = useRef<number>(0);
+  const lastComplexityRef = useRef<'simple' | 'medium' | 'complex'>('medium');
+  const lastConflictsRef = useRef<boolean>(false);
+  const lastHopCountRef = useRef<number>(0);
 
   useEffect(() => {
     // Create a thread when the component mounts
@@ -85,7 +96,11 @@ export default function Home() {
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
 
-    lastRetrievedDocsRef.current = []; // Clear the last retrieved documents
+    lastRetrievedDocsRef.current = [];
+    lastChunkCountRef.current = 0;
+    lastComplexityRef.current = 'medium';
+    lastConflictsRef.current = false;
+    lastHopCountRef.current = 0;
 
     try {
       const response = await fetch('/api/chat', {
@@ -150,6 +165,14 @@ export default function Home() {
                       newArr[newArr.length - 1].content = partialContent;
                       newArr[newArr.length - 1].sources =
                         lastRetrievedDocsRef.current;
+                      newArr[newArr.length - 1].chunkCount =
+                        lastChunkCountRef.current;
+                      newArr[newArr.length - 1].queryComplexity =
+                        lastComplexityRef.current;
+                      newArr[newArr.length - 1].hasConflicts =
+                        lastConflictsRef.current;
+                      newArr[newArr.length - 1].hopCount =
+                        lastHopCountRef.current;
                     }
 
                     return newArr;
@@ -168,11 +191,32 @@ export default function Home() {
               const retrievedDocs = (data as RetrieveDocumentsNodeUpdates)
                 .retrieveDocuments.documents as PDFDocument[];
 
-              // // Handle documents here
               lastRetrievedDocsRef.current = retrievedDocs;
-              console.log('Retrieved documents:', retrievedDocs);
-            } else {
-              // Clear the last retrieved documents if it's a direct answer
+              lastChunkCountRef.current = retrievedDocs.length;
+              const hopData = (data as RetrieveDocumentsNodeUpdates).retrieveDocuments;
+              if (hopData.hopCount) {
+                lastHopCountRef.current = hopData.hopCount;
+              }
+              console.log('Retrieved documents:', retrievedDocs.length, 'chunks, hop:', lastHopCountRef.current);
+            } else if (
+              data &&
+              typeof data === 'object' &&
+              'validateEvidence' in data
+            ) {
+              const validation = (data as ValidateEvidenceNodeUpdates).validateEvidence;
+              if (validation?.hasConflicts !== undefined) {
+                lastConflictsRef.current = validation.hasConflicts;
+              }
+            } else if (
+              data &&
+              typeof data === 'object' &&
+              'classifyAndRoute' in data
+            ) {
+              const classify = (data as ClassifyNodeUpdates).classifyAndRoute;
+              if (classify?.queryComplexity) {
+                lastComplexityRef.current = classify.queryComplexity;
+              }
+            } else if (!('retrieveDocuments' in (data || {}))) {
               lastRetrievedDocsRef.current = [];
             }
           } else {
@@ -235,6 +279,21 @@ export default function Home() {
       }
 
       setFiles((prev) => [...prev, ...selectedFiles]);
+
+      // Store base64 data URLs for PDF viewing
+      for (const file of selectedFiles) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+          setPdfUrls((prev) => {
+            const newMap = new Map(prev);
+            newMap.set(file.name, dataUrl);
+            return newMap;
+          });
+        };
+        reader.readAsDataURL(file);
+      }
+
       toast({
         title: 'Success',
         description: `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} uploaded successfully`,
@@ -272,15 +331,11 @@ export default function Home() {
         <>
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
+              <h2 className="text-xl font-bold mb-2">Adaptive Multimodal RAG</h2>
               <p className="font-medium text-muted-foreground max-w-md mx-auto">
-                This ai chatbot is an example template to accompany the book:{' '}
-                <a
-                  href="https://www.oreilly.com/library/view/learning-langchain/9781098167271/"
-                  className="underline hover:text-foreground"
-                >
-                  Learning LangChain (O'Reilly): Building AI and LLM
-                  applications with LangChain and LangGraph
-                </a>
+                Upload a PDF and ask questions. This system uses adaptive retrieval,
+                dynamic context sizing, and hallucination-resistant reasoning
+                to deliver trustworthy answers.
               </p>
             </div>
           </div>
@@ -289,7 +344,7 @@ export default function Home() {
       ) : (
         <div className="w-full space-y-4 mb-20">
           {messages.map((message, i) => (
-            <ChatMessage key={i} message={message} />
+            <ChatMessage key={i} message={message} pdfUrls={pdfUrls} />
           ))}
           <div ref={messagesEndRef} />
         </div>

@@ -812,10 +812,10 @@
   resolved "https://registry.npmjs.org/@floating-ui/utils/-/utils-0.2.9.tgz"
   integrity sha512-MDWhGtE+eHw5JW7lq4qhc5yRLS11ERl1c7Z6Xd0a58DozHES6EnNNwUWbMiG4J9Cgj053Bhk8zvlhFYKVhULwg==
 
-"@google/generative-ai@^0.7.0":
-  version "0.7.1"
-  resolved "https://registry.yarnpkg.com/@google/generative-ai/-/generative-ai-0.7.1.tgz#eb187c75080c0706245699dbc06816c830d8c6a7"
-  integrity sha512-WTjMLLYL/xfA5BW6xAycRPiAX7FNHKAxrid/ayqC1QMam0KAK0NbMeS9Lubw80gVg5xFMLE+H7pw4wdNzTOlxw==
+"@google/generative-ai@^0.21.0":
+  version "0.21.0"
+  resolved "https://registry.yarnpkg.com/@google/generative-ai/-/generative-ai-0.21.0.tgz#a5011aab9e6082e706937b26ef23445933fa0d15"
+  integrity sha512-7XhUbtnlkSEZK15kN3t+tzIMxsbKm/dSkKBFalj+20NvPKe1kBY7mR2P7vuijEn+f06z5+A8bVGKO0v39cr6Wg==
 
 "@hono/node-server@^1.12.0":
   version "1.13.7"
@@ -1165,12 +1165,12 @@
     zod "^3.22.4"
     zod-to-json-schema "^3.22.3"
 
-"@langchain/google-genai@0.1.0":
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/@langchain/google-genai/-/google-genai-0.1.0.tgz#89552873210d72a5834de20fcbef3e6753283344"
-  integrity sha512-6rIba77zJVMj+048tLfkCBrkFbfAMiT+AfLEsu5s+CFoFmXMiI/dbKeDL4vhUWrJVb9uL4ZZyrnl0nKxyEKYgA==
+"@langchain/google-genai@0.1.5":
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/@langchain/google-genai/-/google-genai-0.1.5.tgz#97757535a96d77ee75ae04a0a7509c6465c1af25"
+  integrity sha512-FlpKyaEIP4+OJ3GL7B2REk/JRMmnqToVMQ8vyWwbTrrLUs1XDd2sIMzdzBVQ7ksk4IJi9p46cT5fosgXItoikw==
   dependencies:
-    "@google/generative-ai" "^0.7.0"
+    "@google/generative-ai" "^0.21.0"
     zod-to-json-schema "^3.22.4"
 
 "@langchain/langgraph-api@1.1.16":
